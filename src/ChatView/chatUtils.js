@@ -1,5 +1,5 @@
 export const messageDate = timestamp => {
-  if (!timestamp) return null;
+  if (timestamp === undefined || timestamp === null) return null;
   if (timestamp instanceof Date) return Number.isNaN(timestamp.getTime()) ? null : timestamp;
   if (typeof timestamp.toDate === 'function') {
     const date = timestamp.toDate();

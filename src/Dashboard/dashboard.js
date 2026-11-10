@@ -94,6 +94,7 @@ class DashboardComponent extends React.Component {
             {this.state.newChatFormVisible ?
               <NewChatComponent history={this.props.history} goToChatFn={this.goToChat} newChatSubmitFn={this.newChatSubmit} onCancel={this.closeNewChat} /> :
               <ChatViewComponent user={this.state.email} chat={activeChat} onBack={this.closeChat}
+                onChatRead={this.messageRead}
                 onReplyMessage={replyTo => this.setState({ replyTo })}>
                 {activeChat && <ChatTextBoxComponent replyTo={this.state.replyTo}
                   onCancelReply={() => this.setState({ replyTo: null })}
@@ -197,7 +198,6 @@ class DashboardComponent extends React.Component {
 
   selectChat = (chat) => {
     this.setState({ selectedChat: chat.id, newChatFormVisible: false, chatOpen: true, replyTo: null });
-    this.messageRead(chat);
   }
 
   goToChat = (docKey, msg) => {
@@ -247,12 +247,7 @@ class DashboardComponent extends React.Component {
           chats.sort((first, second) => {
             return getLastMessageTime(second) - getLastMessageTime(first);
           });
-          this.setState({ chats, chatsLoaded: true, chatError: '' }, () => {
-            if (this.state.chatOpen && this.state.selectedChat) {
-              const activeChat = this.state.chats.find(chat => chat.id === this.state.selectedChat);
-              if (activeChat) this.messageRead(activeChat);
-            }
-          });
+          this.setState({ chats, chatsLoaded: true, chatError: '' });
         },
         error => {
           const code = error.code || 'firestore/unknown';

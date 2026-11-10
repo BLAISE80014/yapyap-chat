@@ -13,6 +13,7 @@ class ChatViewComponent extends React.Component {
 
   componentDidMount() {
     this.scrollToLatest();
+    this.markVisibleMessagesRead();
   }
 
   getSnapshotBeforeUpdate(previousProps) {
@@ -33,8 +34,24 @@ class ChatViewComponent extends React.Component {
   }
 
   componentDidUpdate(previousProps, previousState, shouldScroll) {
-    if (shouldScroll) this.scrollToLatest();
+    if (shouldScroll) {
+      this.scrollToLatest();
+      this.markVisibleMessagesRead();
+    }
   }
+
+  handleMessagesScroll = () => {
+    if (this.messages
+      && this.messages.scrollHeight - this.messages.scrollTop - this.messages.clientHeight < 100) {
+      this.markVisibleMessagesRead();
+    }
+  };
+
+  markVisibleMessagesRead = () => {
+    if (this.props.chat && this.props.onChatRead) {
+      this.props.onChatRead(this.props.chat);
+    }
+  };
 
   scrollToLatest = () => {
     if (this.messages) {
@@ -95,7 +112,8 @@ class ChatViewComponent extends React.Component {
             <button type='button' onClick={() => this.setState({ searchOpen: false, searchTerm: '' })}>Done</button>
           </div>
         }
-        <main className='chat-messages' ref={node => { this.messages = node; }} aria-live='polite'>
+        <main className='chat-messages' ref={node => { this.messages = node; }}
+          onScroll={this.handleMessagesScroll} aria-live='polite'>
           {!messages.length && <div className='conversation-start'><span>THIS IS THE BEGINNING OF YOUR CONVERSATION</span></div>}
           {this.state.searchTerm && !visibleMessages.length && <p className='message-search-empty'>No messages match your search.</p>}
           {visibleMessages.map(({ message, index }, visibleIndex) => {

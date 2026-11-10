@@ -38,6 +38,8 @@ The client uses the Firebase 6 namespaced API and a single initialization in `sr
 
 The existing chat data model is Firebase/Firestore, selected to preserve current YapYap accounts. MongoDB/Express/Socket.IO, group conversations, file uploads, notifications, and WebRTC calling are not implemented in this release. The interface does not use mock conversations as a substitute for persisted chat data.
 
+The chat workspace uses the existing Firestore conversation listener for real-time updates. Messages support date separators, in-conversation search, replies, send/read indicators, unread badges, latest-message previews, and a draft-preserving send state. Messages are marked read when the selected conversation is visible at its latest messages. Chat history remains in the existing `chats/{id}.messages` array; it is not migrated. This schema and the deployed rules do not provide safe single-message deletion, and no Firebase Storage or Realtime Database presence service is configured, so message deletion, media uploads, typing indicators, and online/last-seen presence are not exposed as working features.
+
 ## Project scripts
 
 - `npm start` — start the development server.
