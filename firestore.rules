@@ -1,0 +1,112 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null
+        && request.auth.token.email != null;
+    }
+
+    function validUsername(username) {
+      return username is string
+        && username.matches('^[a-z0-9_]{3,20}$');
+    }
+
+    function isParticipant(chat) {
+      return signedIn()
+        && chat.users is list
+        && request.auth.token.email in chat.users;
+    }
+
+    // USER PROFILES
+    match /users/{uid} {
+
+      allow get: if signedIn()
+        && request.auth.uid == uid;
+
+      allow list: if false;
+
+      allow create: if signedIn()
+        && request.auth.uid == uid
+        && request.resource.data.uid == uid
+        && request.resource.data.email == request.auth.token.email
+        && validUsername(request.resource.data.username)
+        && request.resource.data.fullName is string;
+
+      allow update: if signedIn()
+        && request.auth.uid == uid
+        && request.resource.data.uid == resource.data.uid
+        && request.resource.data.email == resource.data.email
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.email == request.auth.token.email
+        && validUsername(request.resource.data.username);
+
+      allow delete: if false;
+    }
+
+    // USERNAME REGISTRY
+    match /usernames/{username} {
+
+      allow get: if signedIn();
+
+      allow list: if false;
+
+      allow create: if signedIn()
+        && validUsername(username)
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.username == username;
+
+      allow update: if signedIn()
+        && resource.data.uid == request.auth.uid
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.username == username;
+
+      allow delete: if false;
+    }
+
+    // CHAT SYSTEM
+    match /chats/{chatId} {
+
+      allow read: if isParticipant(resource.data);
+
+      allow create: if signedIn()
+        && request.resource.data.users is list
+        && request.resource.data.users.size() == 2
+        && request.auth.token.email in request.resource.data.users
+        && request.resource.data.messages is list
+        && request.resource.data.messages.size() == 1
+        && request.resource.data.messages[0].sender
+          == request.auth.token.email;
+
+      allow update: if (
+        isParticipant(resource.data)
+        && request.resource.data.diff(resource.data)
+          .affectedKeys().hasOnly(['messages', 'receiverHasRead'])
+        && request.resource.data.messages is list
+        && request.resource.data.messages.size()
+          == resource.data.messages.size() + 1
+        && request.resource.data.messages[
+          request.resource.data.messages.size() - 1
+        ].sender == request.auth.token.email
+        && request.resource.data.receiverHasRead == false
+      ) || (
+        isParticipant(resource.data)
+        && request.resource.data.diff(resource.data)
+          .affectedKeys().hasOnly(['receiverHasRead'])
+        && request.resource.data.receiverHasRead == true
+        && resource.data.messages.size() > 0
+        && resource.data.messages[
+          resource.data.messages.size() - 1
+        ].sender != request.auth.token.email
+      );
+
+      allow delete: if false;
+    }
+
+    // BLOCK EVERYTHING ELSE
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

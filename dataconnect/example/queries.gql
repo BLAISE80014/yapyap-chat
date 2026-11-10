@@ -1,0 +1,99 @@
+mutation CreateUser($displayName: String!, $email: String!, $bio: String!, $reputationScore: Float, $interestTags: [String!]) @auth(level: USER) {
+  user_insert(data: {id_expr: "auth.uid", displayName: $displayName, email: $email, bio: $bio, reputationScore: $reputationScore, interestTags: $interestTags})
+}
+
+mutation UpdateUser($displayName: String, $bio: String, $reputationScore: Float) @auth(level: USER) {
+  user_update(key: {id_expr: "auth.uid"}, data: {displayName: $displayName, bio: $bio, reputationScore: $reputationScore})
+}
+
+mutation DeleteUser @auth(level: USER) {
+  user_delete(key: {id_expr: "auth.uid"})
+}
+
+query GetUser @auth(level: USER) {
+  user(key: {id_expr: "auth.uid"}) {
+    displayName email bio reputationScore interestTags
+  }
+}
+
+query ListUsers @auth(level: PUBLIC, insecureReason: "Public profiles are intended to be browsable.") {
+  users {
+    id displayName reputationScore
+  }
+}
+
+mutation CreateConversation($title: String!, $description: String!, $status: String!, $maxParticipants: Int, $category: String) @auth(level: USER) {
+  conversation_insert(data: {title: $title, description: $description, hostUserId_expr: "auth.uid", status: $status, maxParticipants: $maxParticipants, category: $category})
+}
+
+mutation UpdateConversation($id: UUID!, $title: String, $description: String, $status: String) @auth(level: USER) {
+  conversation_update(key: {id: $id}, data: {title: $title, description: $description, status: $status})
+}
+
+mutation DeleteConversation($id: UUID!) @auth(level: USER) {
+  conversation_delete(key: {id: $id})
+}
+
+query GetConversation($id: UUID!) @auth(level: PUBLIC, insecureReason: "Conversations are public events.") {
+  conversation(id: $id) {
+    title description hostUser { displayName } status category
+  }
+}
+
+query ListConversations @auth(level: PUBLIC, insecureReason: "Conversations are public events.") {
+  conversations {
+    id title status category
+  }
+}
+
+mutation CreateParticipant($conversationId: UUID!, $role: String!) @auth(level: USER) {
+  participant_insert(data: {userId_expr: "auth.uid", conversationId: $conversationId, role: $role})
+}
+
+mutation UpdateParticipant($conversationId: UUID!, $role: String!) @auth(level: USER) {
+  participant_update(key: {userId_expr: "auth.uid", conversationId: $conversationId}, data: {role: $role})
+}
+
+mutation DeleteParticipant($conversationId: UUID!) @auth(level: USER) {
+  participant_delete(key: {userId_expr: "auth.uid", conversationId: $conversationId})
+}
+
+query GetParticipant($conversationId: UUID!) @auth(level: USER) {
+  participant(key: {userId_expr: "auth.uid", conversationId: $conversationId}) {
+    role joinedAt
+  }
+}
+
+query ListParticipants($conversationId: UUID!) @auth(level: PUBLIC, insecureReason: "Participant lists are public.") {
+  participants(where: {conversationId: {eq: $conversationId}}) {
+    user { displayName } role
+  }
+}
+
+mutation SendMessage($conversationId: UUID!, $text: String!) @auth(level: USER) {
+  message_insert(data: {conversationId: $conversationId, authorId_expr: "auth.uid", text: $text, timestamp_expr: "request.time"})
+}
+
+mutation DeleteMessage($id: UUID!) @auth(level: USER) {
+  message_delete(key: {id: $id})
+}
+
+query ListMessages($conversationId: UUID!) @auth(level: PUBLIC, insecureReason: "Chat messages in public conversations are visible.") {
+  messages(where: {conversationId: {eq: $conversationId}}, orderBy: [{timestamp: ASC}]) {
+    author { displayName } text timestamp
+  }
+}
+
+mutation GiveFeedback($targetUserId: UUID!, $rating: Int!, $comments: String) @auth(level: USER) {
+  feedback_insert(data: {reviewerId_expr: "auth.uid", targetUserId: $targetUserId, rating: $rating, comments: $comments})
+}
+
+mutation DeleteFeedback($id: UUID!) @auth(level: USER) {
+  feedback_delete(key: {id: $id})
+}
+
+query ListFeedbackForUser($targetUserId: UUID!) @auth(level: PUBLIC, insecureReason: "User feedback scores are public.") {
+  feedbacks(where: {targetUserId: {eq: $targetUserId}}) {
+    reviewer { displayName } rating comments
+  }
+}

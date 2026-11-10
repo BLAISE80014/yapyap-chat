@@ -1,0 +1,37 @@
+type User @table {
+  displayName: String!
+  email: String!
+  bio: String!
+  reputationScore: Float
+  interestTags: [String]
+}
+
+type Conversation @table {
+  title: String!
+  description: String!
+  hostUser: User!
+  status: String!
+  maxParticipants: Int
+  category: String
+}
+
+type Participant @table(key: ["user", "conversation"]) {
+  user: User!
+  conversation: Conversation!
+  role: String!
+  joinedAt: Timestamp
+}
+
+type Message @table {
+  conversation: Conversation!
+  author: User!
+  text: String!
+  timestamp: Timestamp!
+}
+
+type Feedback @table {
+  reviewer: User!
+  targetUser: User!
+  rating: Int!
+  comments: String
+}
